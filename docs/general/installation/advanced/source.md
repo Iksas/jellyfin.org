@@ -28,7 +28,7 @@ All package builds begin with these two steps:
 
 ## Container image
 
-1. Build the container image using Docker or Podman.
+3. Build the container image using Docker or Podman.
 
    ```sh
    docker build -t $USERNAME/jellyfin --file docker/Dockerfile .
@@ -48,7 +48,7 @@ All package builds begin with these two steps:
 
    Replace "auto" with your own Jellyfin version tag if you want to.
 
-2. Run Jellyfin in a new container using Docker or Podman from the built container image.
+4. Run Jellyfin in a new container using Docker or Podman from the built container image.
 
    ```sh
    docker run -d -p 8096:8096 $USERNAME/jellyfin
@@ -80,7 +80,7 @@ This will very likely be split out into a separate repository at some point in t
 
 ## Windows
 
-3. Install dotnet SDK 8.0 from [Microsoft's Website](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) and [install Git for Windows](https://gitforwindows.org/).
+3. Install dotnet SDK 9.0 from [Microsoft's Website](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) and [install Git for Windows](https://gitforwindows.org/).
    You must be on Powershell 3 or higher.
 
 4. From Powershell set the execution policy to unrestricted.
@@ -92,6 +92,7 @@ This will very likely be split out into a separate repository at some point in t
 5. If you are building a version of Jellyfin newer than 10.6.4, you will need to download the build script from a separate repository.
 
    ```powershell
+   cd jellyfin-server
    git clone https://github.com/jellyfin/jellyfin-server-windows.git windows
    ```
 
@@ -105,13 +106,23 @@ This will very likely be split out into a separate repository at some point in t
 
    - The `-InstallLocation` flag lets you select where the compiled binaries go; the default is `$Env:AppData\Jellyfin-Server\`.
 
-   - The `-InstallFFMPEG` flag will automatically pull the stable `ffmpeg` binaries appropriate to your architecture (x86/x64 only for now) from [BtbN](https://github.com/BtbN/FFmpeg-Builds/releases) and place them in your Jellyfin directory.
-
    - The `-InstallNSSM` flag will automatically pull the stable `nssm` binary appropriate to your architecture (x86/x64 only for now) from [NSSM's Website](https://nssm.cc/) and place it in your Jellyfin directory.
 
-7. (Optional) Use [NSSM](https://nssm.cc) to configure Jellyfin to run as a service.
+7. Install `jellyfin-ffmpeg`: Download the newest `.zip` from the [Jellyfin Repository](https://repo.jellyfin.org/?path=/ffmpeg/windows), and extract the files into `%APPDATA%\Jellyfin-Server\` (e.g. `%APPDATA%\Jellyfin-Server\ffmpeg.exe`).
 
-8. Jellyfin is now available in the default directory, or whichever directory you chose.
+8. (Optional) Install the web interface (`jellyfin-web`)
+
+   Install [nodejs](https://nodejs.org/en/download), then run the following commands:
+
+   ```powershell
+   cd ../jellyfin-web/
+   npm install -g npm@10
+   npm install
+   npm run build:production
+   Copy-Item -Recurse ./dist/ -Destination "$env:APPDATA\Jellyfin-Server\jellyfin-web\"
+   ```
+
+9. Jellyfin is now available in the default directory, or whichever directory you chose.
 
    - Start it from PowerShell.
 
@@ -124,6 +135,10 @@ This will very likely be split out into a separate repository at some point in t
      ```cmd
      %APPDATA%\Jellyfin-Server\jellyfin.exe
      ```
+
+   The web interface will be available on port `8096`. If you didn't install the web interface, add the `--nowebclient` flag to the start command.
+
+10. (Optional) Use [NSSM](https://nssm.cc) to configure Jellyfin to run as a service.
 
 :::note
 

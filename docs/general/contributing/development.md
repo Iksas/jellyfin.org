@@ -175,28 +175,42 @@ When submitting a new PR, please ensure you do the following things. If you have
 
 ## Building and Testing Inside a Docker Container
 
+The official Jellyfin container is used as a basis for testing. Start it in the background:
+
+```sh
+docker run -d --restart always --name jftest jellyfin/jellyfin
+```
+
 We need to install all development dependencies and pull down the code inside the container before we can compile and run.
 
 :::note
 
-Run each command on a separate line. The container we'll test in is named `jftest`. Within Docker, anytime the entrypoint executable is terminated, the session restarts, so just exec into it again to continue. This is also why we explicitly kill it to reload the new version.
+Run each command on a separate line. The container we'll test in is named `jftest`. Anytime the entrypoint executable is terminated, the session restarts (`--restart always`), so just exec into it again to continue. This is also why we explicitly kill Jellyfin to reload the new version.
 
 :::
 
+Jellyfin's logs can be viewed through docker:
+
+```sh
+docker container logs jftest
+```
+
 ### Master Branch
+
+Exec into the `jftest` container, build the master branch, and kill Jellyfin to load the new version:
 
 ```sh
 docker exec -ti jftest bash
 apt-get update && apt-get install -y git gnupg curl autoconf g++ make libpng-dev gifsicle automake libtool gcc musl-dev nasm ca-certificates
-curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
+curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor --yes -o /usr/share/keyrings/microsoft-prod.gpg
 curl -LO https://packages.microsoft.com/config/debian/12/prod.list && mv prod.list /etc/apt/sources.list.d/microsoft-prod.list
-apt-get update && apt-get install -y dotnet-sdk-8.0
-curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+apt-get update && apt-get install -y dotnet-sdk-9.0
+curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor --yes -o /etc/apt/keyrings/nodesource.gpg
 echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
 apt-get update && apt-get install -y nodejs
 cd /opt && git clone https://github.com/jellyfin/jellyfin.git && git clone https://github.com/jellyfin/jellyfin-web.git
 cd jellyfin/ && DOTNET_CLI_TELEMETRY_OPTOUT=1 && DOTNET_CLI_HOME="/tmp/" dotnet publish Jellyfin.Server --configuration Debug --output="/jellyfin" --self-contained --runtime linux-x64
-cd /opt/jellyfin-web && npm install && npm run build:development && cp -r /opt/jellyfin-web/dist /jellyfin/jellyfin-web
+cd /opt/jellyfin-web && npm install && npm run build:development && cp -rT /opt/jellyfin-web/dist /jellyfin/jellyfin-web
 apt-get remove -y gnupg curl && apt-get clean -y autoclean && apt-get autoremove -y
 kill -15 $(pidof jellyfin)
 ```
